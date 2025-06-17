@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Quiz de Vigilância em Saúde</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 0; padding: 10px; max-width: 800px; margin: auto; }
+    h1 { text-align: center; color: #2c3e50; font-size: 1.8rem; }
+    p.author { text-align: center; font-weight: bold; margin-bottom: 20px; }
+    .question { border: 1px solid #ccc; padding: 15px; margin-bottom: 20px; border-radius: 8px;
+                box-shadow: 0 2px 5px rgba(0,0,0,0.1); width: 100%; box-sizing: border-box;}
+    .question h3 { font-size: 1.2rem; margin: 0 0 10px; }
+    .options button { display: block; width: 100%; margin: 5px 0; padding: 10px;
+                      border: none; border-radius: 4px; background: #ecf0f1; cursor: pointer;
+                      text-align: left; font-size: 1rem; box-sizing: border-box; }
+    .options button:hover { background: #bdc3c7; }
+    .explanation { margin-top: 10px; font-style: italic; font-size: 0.95rem; }
+    #showStats { display: block; margin: 20px auto; padding: 10px 20px; border: none;
+                 border-radius: 4px; background: #2980b9; color: white; cursor: pointer;
+                 font-size: 1rem; }
+    #statsContainer { text-align: center; margin-top: 30px; }
+    #resultText { margin: 10px 0; font-weight: bold; font-size: 1rem; }
+    #statsChart { width: 100% !important; height: auto !important; }
+    @media (max-width: 600px) {
+      body { padding: 5px; }
+      .question h3 { font-size: 1rem; }
+      .options button { font-size: 0.9rem; padding: 8px; }
+      h1 { font-size: 1.5rem; }
+    }
+  </style>
+</head>
+<body>
+  <h1>Quiz de Vigilância em Saúde</h1>
+  <p class="author">Autor: Marco Oliveira</p>
+  <div id="quiz"></div>
+  <button id="showStats">Ver estatísticas</button>
+  <div id="statsContainer">
+    <div id="resultText"></div>
+    <canvas id="statsChart" width="400" height="400"></canvas>
+  </div>
+  <script>
+    const questions = [
+      // 30 questões de múltipla escolha
+      {question:'1. Qual a definição de Vigilância em Saúde segundo a Portaria nº 1.378 de julho de 2013?',options:['Processo episódico de investigação de surtos em populações específicas.','Coleta de dados sobre vacinas apenas para calendário infantil.','Processo sistemático e contínuo de coleta, análise e disseminação de dados para proteção da saúde da população.','Apenas monitoramento de doenças transmissíveis.','Fiscalização de serviços de saúde privados.'],correct:2,explanation:'A Portaria define Vigilância em Saúde como um processo sistemático e contínuo de coleta, consolidação, análise e disseminação de dados visando a proteção da saúde da população.'},
+      {question:'2. Quais ações NÃO fazem parte das atribuições da Vigilância em Saúde conforme Art. 4º da Portaria 1.378/2013?',options:['Vigilância de doenças crônicas não transmissíveis.','Detecção oportuna de emergências de saúde pública.','Promoção de práticas de yoga na comunidade.','Vigilância sanitária de produtos e serviços de interesse à saúde.','Vigilância da saúde do trabalhador.'],correct:2,explanation:'Promoção de práticas de yoga não é mencionada no Art. 4º como atribuição da Vigilância em Saúde.'},
+      {question:'3. Quais são os componentes da Vigilância em Saúde listados na Portaria GM/MS nº 3.252/09?',options:['Vigilância Epidemiológica, Promoção da Saúde, Vigilância da Situação de Saúde, Vigilância Ambiental, Vigilância do Trabalhador e Vigilância Sanitária.','Apenas Vigilância Epidemiológica e Vigilância Sanitária.','Políticas de saúde, financiamento, recursos humanos.','Sistema Único de Saúde e Vigilância em Saúde.','Anvisa, INCQS, Lacen.'],correct:0,explanation:'A Portaria GM/MS n. 3.252/09 define seis componentes: Epidemiológica, Promoção, Situação de Saúde, Ambiental, Trabalhador e Sanitária.'},
+      {question:'4. Qual ministério é o principal coordenador das ações de Vigilância em Saúde Ambiental?',options:['Ministério da Saúde.','Ministério do Meio Ambiente.','Ministério do Trabalho.','Ministério da Educação.','Ministério da Agricultura.'],correct:1,explanation:'A Vigilância em Saúde Ambiental é coordenada principalmente pelo Ministério do Meio Ambiente, com saúde atuando como colaborador.'},
+      {question:'5. A Vigilância Sanitária exerce poder de polícia administrativa. Isso significa que ela pode:',options:['Aplicar multa e interditar estabelecimentos.','Prescrever medicamentos controlados.','Realizar cirurgias de rotina.','Elaborar políticas de recursos humanos.','Aprovar programas de residência médica.'],correct:0,explanation:'O poder de polícia permite ações preventivas (interdição) e repressivas (multa) em favor da saúde pública.'},
+      {question:'6. O que significa “externalidade” no contexto da Vigilância em Saúde?',options:['Benefícios ou prejuízos para indivíduos não diretamente envolvidos.','Ações apenas de fiscalização sanitária.','Gastos adicionais que recaem sobre o usuário direto.','Taxa cobrada por serviços laboratoriais.','Processo de territorialização.'],correct:0,explanation:'Externalidade refere-se aos efeitos (positivos ou negativos) sobre quem não está diretamente envolvido na ação de vigilância.'},
+      {question:'7. Em Vigilância em Saúde, o termo “territorialização” refere-se a:',options:['A subdivisão de recursos financeiros.','Operacionalização das ações em áreas geograficamente delimitadas.','Apenas identificação de surtos.','Exclusivamente estudo de doenças crônicas.','Aplicação de vacinas em todo o país simultaneamente.'],correct:1,explanation:'Territorialização é a implementação das ações de vigilância em territórios específicos para melhor monitoramento.'},
+      {question:'8. Qual a principal diferença entre Vigilância Epidemiológica e Vigilância Sanitária?',options:['Nenhuma, são sinônimos.','Epidemiológica monitora doenças; Sanitária regula produtos e serviços de risco.','Epidemiológica regula produtos; Sanitária monitora epidemias.','Ambas apenas coletam dados de vacinação.','Somente a Sanitária faz parte do SUS.'],correct:1,explanation:'A epidemiológica foca no monitoramento de agravos; a sanitária atua na regulação e fiscalização de produtos, serviços e tecnologias.'},
+      {question:'9. Qual componente NÃO faz parte do Sistema Nacional de Vigilância Sanitária (SNVS) em sentido restrito?',options:['Anvisa.','Órgãos estaduais e municipais de vigilância sanitária.','INCQS.','Lacen.','Programa Nacional de Imunizações.'],correct:4,explanation:'O Programa Nacional de Imunizações faz parte do Sistema de Vigilância em Saúde, não diretamente do SNVS em sentido restrito.'},
+      {question:'10. O Piso Fixo de Vigilância e Promoção da Saúde (PFVPS) é corrigido:',options:['Pelo Índice Nacional de Preços ao Consumidor (INPC).','Anualmente pela variação da população estimada pelo IBGE.','A cada cinco anos pela ANVISA.','Somente em anos de emergência sanitária.','Pelo valor do salário mínimo.'],correct:1,explanation:'O PFVPS é corrigido anualmente pela variação da população estimada pelo IBGE.'},
+      {question:'11. Quais sistemas de informação são utilizados pela Vigilância em Saúde? (Marque a alternativa que contém apenas sistemas corretos.)',options:['SIM, SINASC, SIH, SIA, SINAN e SIAB.','SIM, CNES, DATASUS.','SIH, SAMU, SES.','SUS, CNES, ANVISA.','SIM, SIASUS, SISCOPE.'],correct:0,explanation:'Os principais são SIM, SINASC, SIH, SIA, SINAN e SIAB.'},
+      {question:'12. A Portaria GM/MS nº 3.282/2013 tem por objetivo principal:',options:['Definir o conceito de territorialização.','Estabelecer diretrizes de execução e financiamento das ações de Vigilância em Saúde no SUS.','Criar novas vacinas para doenças emergentes.','Substituir a Lei nº 9.782/99.','Regular a venda de medicamentos.'],correct:1,explanation:'Essa portaria reorganiza o modelo de financiamento e execução das ações de vigilância em saúde no SUS.'},
+      {question:'13. A Política Nacional de Vigilância em Saúde (PNVS) foi instituída pela Resolução nº:',options:['588 de 2018.','3252 de 2009.','1378 de 2013.','9282 de 2013.','782 de 1999.'],correct:0,explanation:'A PNVS foi instituída pela Resolução nº 588, de 12 de julho de 2018.'},
+      {question:'14. Em sistemas de vigilância, a opção por “sistemas” e não apenas “redes” justifica-se porque:',options:['Não há necessidade de planejamento.','Há obrigatoriedade legal de execução de ações definidas como sistemas.','Sistemas são menos complexos que redes.','Redes apenas tratam vacinas.','Sistemas dispensam coordenação nacional.'],correct:1,explanation:'O SUS define legalmente vigilância sanitária e epidemiológica como sistemas, exigindo planejamento e coordenação.'},
+      {question:'15. O Relatório Anual de Gestão (RAG) tem a função de:',options:['Detalhar ações futuras de saúde.','Apresentar resultados alcançados com base em indicadores.','Substituir o Plano de Saúde.','Banco de dados de mortalidade.','Instrumento de fiscalização sanitária.'],correct:1,explanation:'O RAG apresenta os resultados alcançados com base nos indicadores definidos na programação anual.'},
+      {question:'16. Qual subsistema NÃO faz parte do Sistema Nacional de Vigilância em Saúde (SNVS) amplo?',options:['Subsistema Nacional de Vigilância Epidemiológica.','Subsistema Nacional de Saúde Ambiental.','Subsistema de Saúde do Trabalhador.','Sistema Nacional de Laboratórios de Saúde Pública.','Programa Farmácia Popular.'],correct:4,explanation:'O Programa Farmácia Popular não integra o SNVS amplo.'},
+      {question:'17. A Vigilância da Situação de Saúde tem como foco principal:',options:['Monitorar fatores ambientais exclusivamente.','Produzir análises para subsidiar planejamento e avaliação de ações.','Fiscalizar estabelecimentos hospitalares.','Promover campanhas de vacinação.','Interditar alimentos contaminados.'],correct:1,explanation:'Esse componente produz análises que auxiliam o planejamento, estabelecimento de prioridades e monitoramento.'},
+      {question:'18. Qual é o órgão responsável pela coordenação nacional da Vigilância Sanitária?',options:['INCQS.','Lacen.','Anvisa.','Ministério do Trabalho.','CNS.'],correct:2,explanation:'A Anvisa é a autarquia vinculada ao Ministério da Saúde que coordena o SNVS.'},
+      {question:'19. O que NÃO faz parte das ações de Vigilância da Saúde do Trabalhador?',options:['Promoção e proteção da saúde dos trabalhadores.','Recuperação e reabilitação de trabalhadores expostos a riscos.','Fiscalização sanitária de lares de idosos.','Ações de vigilância epidemiológica e sanitária no ambiente de trabalho.','Identificação de agravos relacionados ao trabalho.'],correct:2,explanation:'Fiscalização de lares de idosos não é foco da Vigilância do Trabalhador.'},
+      {question:'20. A Vigilância em Saúde Ambiental busca:',options:['Regular apenas alimentos industrializados.','Conhecer e detectar mudanças nos fatores ambientais que interferem na saúde humana.','Promover atividades físicas na comunidade.','Realizar pesquisas genéticas.','Gerenciar programas de residência médica.'],correct:1,explanation:'Foca em identificar fatores de risco ambientais e propor medidas de prevenção e controle.'},
+      {question:'21. O subsistema de informação SINAN é voltado para:',options:['Notificação de agravos de notificação compulsória.','Registro de nascidos vivos.','Informação ambulatorial.','Dados hospitalares.','Estatísticas de mortalidade.'],correct:0,explanation:'O SINAN registra agravos de notificação compulsória, como doenças transmissíveis.'},
+      {question:'22. Segundo o resumo, a Vigilância em Saúde tem caráter intersetorial. Isso quer dizer que:',options:['Depende exclusivamente de um único órgão.','Envolve diferentes setores além da saúde para atuar nos determinantes sociais.','Só se relaciona com vigilância epidemiológica.','É restrita ao âmbito federal.','Não considera os fatores ambientais.'],correct:1,explanation:'Intersetorialidade implica colaboração entre diversos setores para atuar nos determinantes de saúde.'},
+      {question:'23. O Piso Variável de Vigilância e Promoção da Saúde (PVVPS) é constituído por:',options:['Valores fixos corrigidos pelo IBGE.','Incentivos específicos por adesão ou indicação epidemiológica.','Recursos provenientes de doações internacionais.','Multas aplicadas pela Anvisa.','Receitas de serviços hospitalares.'],correct:1,explanation:'O PVVPS é formado por incentivos específicos ligados à adesão a programas ou indicadores epidemiológicos.'},
+      {question:'24. O Sistema Nacional de Laboratórios de Saúde Pública (Lacen) faz parte de qual sistema?',options:['Somente do SNVS restrito.','Do SNVS amplo e do Sistema Nacional de Vigilância em Saúde.','Apenas do Programa Nacional de Imunizações.','Exclusivamente da Vigilância Sanitária.','Não integra nenhum sistema formal.'],correct:1,explanation:'O Lacen compõe tanto o SNVS amplo quanto o Sistema Nacional de Vigilância em Saúde.'},
+      {question:'25. O Art. 3º da Portaria 1.378/2013 determinou que:',options:['As ações de vigilância em saúde devem ser autônomas e isoladas.','Deve haver coordenação com outras ações e serviços do SUS para garantir integralidade.','Somente os municípios podem executar vigilância epidemiológica.','O financiamento é anual e sem prestação de contas.','Não há necessidade de análise de dados.'],correct:1,explanation:'O artigo destaca a coordenação com o SUS para garantir a integralidade da atenção.'},
+      {question:'26. O conceito de risco em Vigilância em Saúde refere-se a:',options:['Possibilidade de ocorrência de eventos com consequências negativas à saúde.','Gastos financeiros do SUS.','Número de notificações no SINAN.','Taxa de ocupação hospitalar.','Quantidade de postos de saúde em uma região.'],correct:0,explanation:'Risco é a probabilidade de evento que possa causar agravos ou danos à saúde.'},
+      {question:'27. Qual destes NÃO é um componente de financiamento instituído pela Portaria GM/MS n. 3.252/09?',options:['Piso Fixo de Vigilância e Promoção da Saúde.','Piso Variável de Vigilância e Promoção da Saúde.','Finlacen – Visa.','Piso Fixo de Vigilância Sanitária.','Fundo Nacional de Inovação.'],correct:4,explanation:'O Fundo Nacional de Inovação não faz parte dos pisos institucionais mencionados.'},
+      {question:'28. O PlanejaSUS inclui como instrumento:',options:['Banco de sangue nacional.','Plano de saúde quadrienal, PAS e RAG.','Certificação de laboratórios privados.','Inscrição nacional de profissionais de saúde.','Programa de residência médica.'],correct:1,explanation:'Os instrumentos do PlanejaSUS são o Plano de Saúde, a Programação Anual de Saúde (PAS) e o Relatório Anual de Gestão (RAG).'},
+      {question:'29. Quem tem autonomia administrativa e estabilidade após sabatina no Senado?',options:['Diretores de Lacen.','Dirigentes da Anvisa.','Secretários municipais de saúde.','Coordenadores de vigilância epidemiológica estadual.','Ministros de Estado.'],correct:1,explanation:'Os dirigentes da Anvisa têm autonomia e estabilidade após aprovação no Senado.'},
+      {question:'30. A Política Nacional de Saúde do Trabalhador integra:',options:['O Sistema Nacional de Vigilância Sanitária restrito.','O Sistema Nacional de Vigilância em Saúde amplo.','O Programa Farmácia Popular.','Somente o SUS Ambulatorial.','Não integra nenhum sistema formal.'],correct:1,explanation:'Faz parte do Sistema Nacional de Vigilância em Saúde em sua estrutura ampla.'},
+      // 5 questões de verdadeiro/falso
+      {question:'31. A Vigilância Sanitária é a única das vigilâncias que detém poder de polícia administrativa.',options:['Verdadeiro','Falso'],correct:0,explanation:'Somente a Vigilância Sanitária possui poder de polícia administrativa conforme definição legal.'},
+      {question:'32. Externalidades significam que as ações de vigilância afetam apenas quem está diretamente envolvido.',options:['Verdadeiro','Falso'],correct:1,explanation:'Externalidades são efeitos sobre indivíduos que não estão diretamente envolvidos.'},
+      {question:'33. O SIM é o sistema de informação de mortalidade.',options:['Verdadeiro','Falso'],correct:0,explanation:'SIM significa Sistema de Informação de Mortalidade.'},
+      {question:'34. O SINAN registra nascidos vivos em todo o Brasil.',options:['Verdadeiro','Falso'],correct:1,explanation:'SINAN é o sistema de informação de agravos de notificação; SINASC registra nascidos vivos.'},
+      {question:'35. O Piso Fixo de Vigilância e Promoção da Saúde (PFVPS) é corrigido anualmente pela variação da população estimada pelo IBGE.',options:['Verdadeiro','Falso'],correct:0,explanation:'Correto: o PFVPS usa variação populacional do IBGE para correção anual.'}
+    ];
+
+    // Render all questions
+    const quizDiv = document.getElementById('quiz');
+    questions.forEach((q,index) => {
+      const div = document.createElement('div');
+      div.className = 'question';
+      const h3 = document.createElement('h3');
+      h3.innerText = q.question;
+      div.appendChild(h3);
+      const opts = document.createElement('div');
+      opts.className = 'options';
+      opts.dataset.answered = 'false';
+      q.options.forEach((opt,i) => {
+        const btn = document.createElement('button');
+        btn.innerText = opt;
+        btn.onclick = () => {
+          if(opts.dataset.answered==='true') return;
+          opts.dataset.answered='true';
+          btn.disabled=true;
+          const buttons = opts.querySelectorAll('button');
+          buttons.forEach((b,bi) => {
+            b.disabled=true;
+            if(bi===q.correct) b.style.background='#2ecc71';
+            if(bi===i && bi!==q.correct) b.style.background='#e74c3c';
+          });
+          const expl = document.createElement('div');
+          expl.className='explanation';
+          expl.innerText='Explicação: '+q.explanation;
+          div.appendChild(expl);
+        };
+        opts.appendChild(btn);
+      });
+      div.appendChild(opts);
+      quizDiv.appendChild(div);
+    });
+
+    document.getElementById('showStats').onclick = () => {
+      let correctCount=0;
+      questions.forEach((q,idx) => {
+        const optsDiv = document.getElementsByClassName('options')[idx];
+        if(optsDiv.dataset.answered==='true') {
+          const btn = optsDiv.querySelectorAll('button')[q.correct];
+          if(btn.style.background==='rgb(46, 204, 113)'||btn.style.background==='#2ecc71') {
+            correctCount++;
+          }
+        }
+      });
+      const total = questions.length;
+      const errors = total - correctCount;
+      document.getElementById('resultText').innerText = 
+        `Acertos: ${correctCount} (${((correctCount/total)*100).toFixed(1)}%) | Erros: ${errors} (${((errors/total)*100).toFixed(1)}%)`;
+      const ctx = document.getElementById('statsChart').getContext('2d');
+      new Chart(ctx,{type:'pie',data:{labels:['Acertos','Erros'],datasets:[{data:[correctCount,errors],backgroundColor:['#2ecc71','#e74c3c']}]},options:{responsive:true}});
+    };
+  </script>
+</body>
+</html>
